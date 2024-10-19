@@ -11,6 +11,7 @@ while stopper:
     Make_input=input("Enter the make of the phone: ( Enter Exit to exit )  ")
     if Make_input=="Exit":
         stopper=False
+        continue
     Model_input=input("Enter the model of the phone: ")
     Price_input=input("Enter the price of the phone: ")
     
