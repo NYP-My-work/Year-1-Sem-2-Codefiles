@@ -1,35 +1,27 @@
 class Student:
-    def __init__(self, name, math, chinese, english, science ):
+    def __init__(self, name, math, chinese, english, science):
         self.name = name
-        self.math = float(math)      # Need to convert to float
+        self.math = float(math)      # Convert scores to float
         self.chinese = float(chinese)
         self.english = float(english)
         self.science = float(science)
-        self.choices = []
+        self.choices = []           # Initialize choices as an empty list
 
     def get_score(self):
         return (self.math + self.chinese + self.english + self.science) / 4
-    def set_choice(self, choice ):
-        self.choices=choice
-        return(self.choices)
 
-
-def main():
-    students = load_result()
-    choice="the choices are ChoiceA, ChoiceB, ChoiceC"
-    if students:
-        for s in students:
-            s.set_choice(choice)
-            print(f"{s.name}, Score: {s.get_score():.2f}, Choices: {s.choices}")
-
+    def set_choice(self, choice):
+        # Split the choices string into a list if it's not already a list
+        self.choices = choice.split(", ") if isinstance(choice, str) else choice
+        return self.choices
 
 
 def load_result():
     students = []
     try:
-        with open('prac3/results.txt', "r") as results:
+        with open('prac3/results.txt', "r") as results:  # Open in read mode
             for line in results:
-                data = line.strip().split(',')  # strip() is a method, needs ()
+                data = line.strip().split(',')  # Split the line into data
                 if len(data) == 5:
                     student = Student(
                         name=data[0].strip(),
@@ -39,16 +31,28 @@ def load_result():
                         science=data[4].strip()
                     )
                     students.append(student)
-            return students  # Move return outside the for loop
-    except FileNotFoundError:  # Correct exception name
-        print("File Not Found!")
-    except ValueError:
-        print("Hey, valueerror")
-    except IOError:
-        print("IOError")
+            return students  # Ensure return is outside the loop
+    except FileNotFoundError:
+        print("Error: File not found.")
+    except ValueError as ve:
+        print(f"Error: Invalid data format - {ve}")
+    except IOError as ioe:
+        print(f"Error: IO Error - {ioe}")
     except PermissionError:
-        print("Permissions Error")
+        print("Error: Permission denied.")
+    return []  # Return an empty list if an exception occurs
 
 
-# start the test program
+def main():
+    students = load_result()
+    choice = "ChoiceA, ChoiceB, ChoiceC"  # Choices string
+    if students:
+        for s in students:
+            s.set_choice(choice)  # Assign choices
+            print(f"{s.name}, Score: {s.get_score():.2f}, Choices: {s.choices}")
+    else:
+        print("No students found.")
+
+
+# Start the program
 main()

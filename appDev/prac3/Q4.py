@@ -1,161 +1,208 @@
-import shelve
-
-# Define the Phone class
+# Phone class definition
 class Phone:
-    def __init__(self, id=None, make=None, model=None, price=None):
-        self.id = id
-        self.make = make
-        self.model = model
-        self.price = price
-
-    # Accessors
-    def get_id(self):
-        return self.id
-
-    def get_make(self):
-        return self.make
-
-    def get_model(self):
-        return self.model
-
-    def get_price(self):
-        return self.price
-
-    # Mutators
-    def set_id(self, id):
-        self.id = id
-
-    def set_make(self, make):
-        self.make = make
-
-    def set_model(self, model):
-        self.model = model
-
-    def set_price(self, price):
-        self.price = price
-
+    def __init__(self, make, model, price):
+        self._id = None  # Initialize id to None
+        self._make = make
+        self._model = model
+        self._price = price
+    
+    # Accessor methods
+    @property
+    def id(self):
+        return self._id
+    
+    @property
+    def make(self):
+        return self._make
+    
+    @property
+    def model(self):
+        return self._model
+    
+    @property
+    def price(self):
+        return self._price
+    
+    # Mutator methods
+    @id.setter
+    def id(self, value):
+        self._id = value
+    
+    @make.setter
+    def make(self, value):
+        self._make = value
+    
+    @model.setter
+    def model(self, value):
+        self._model = value
+    
+    @price.setter
+    def price(self, value):
+        self._price = value
+    
     def __str__(self):
-        return f"ID: {self.id}, Make: {self.make}, Model: {self.model}, Price: {self.price}"
+        return f"ID: {self._id}, Make: {self._make}, Model: {self._model}, Price: ${self._price:.2f}"
 
+class PhoneShelve:
+    def __init__(self, filename="phone_inventory.db"):
+        self.filename = filename
+        self.current_id = 0
+        
+    def __enter__(self):
+        import shelve
+        self.db = shelve.open(self.filename)
+        # Initialize current_id based on existing entries
+        if 'current_id' in self.db:
+            self.current_id = self.db['current_id']
+        return self
+        
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.db['current_id'] = self.current_id
+        self.db.close()
+        
+    def search(self, search_term):
+        try:
+            results = []
+            for key in self.db:
+                if key != 'current_id':  # Skip the counter
+                    phone = self.db[key]
+                    if (search_term.lower() in phone.make.lower() or 
+                        search_term.lower() in phone.model.lower() or
+                        search_term == str(phone.id)):
+                        results.append(phone)
+            return results
+        except Exception as e:
+            raise Exception(f"Error searching for phone: {str(e)}")
 
-# Add a new phone
-def add_phone(shelf):
-    try:
-        id = input("Enter phone id: ")
-        if id in shelf:
-            print("Phone with this ID already exists.")
-            return
-        make = input("Enter phone make: ")
-        model = input("Enter phone model: ")
-        price = input("Enter price of phone: ")
+    def add(self, phone):
+        try:
+            self.current_id += 1
+            phone.id = self.current_id
+            self.db[str(phone.id)] = phone
+            return phone.id
+        except Exception as e:
+            raise Exception(f"Error adding phone: {str(e)}")
 
-        phone = Phone(id, make, model, price)
-        shelf[id] = phone
-        print("Phone added successfully.")
-    except Exception as e:
-        print(f"Error adding phone: {e}")
+    def update(self, phone_id, make, model, price):
+        try:
+            if str(phone_id) in self.db:
+                phone = self.db[str(phone_id)]
+                phone.make = make
+                phone.model = model
+                phone.price = price
+                self.db[str(phone_id)] = phone
+                return True
+            return False
+        except Exception as e:
+            raise Exception(f"Error updating phone: {str(e)}")
 
+    def delete(self, phone_id):
+        try:
+            if str(phone_id) in self.db:
+                del self.db[str(phone_id)]
+                return True
+            return False
+        except Exception as e:
+            raise Exception(f"Error deleting phone: {str(e)}")
 
-# Search for a phone
-def search_phone(shelf):
-    try:
-        id = input("Enter phone id to search: ")
-        if id in shelf:
-            print(shelf[id])
-        else:
-            print("Phone not found.")
-    except Exception as e:
-        print(f"Error searching phone: {e}")
+    def display_all(self):
+        try:
+            phones = []
+            for key in self.db:
+                if key != 'current_id':  # Skip the counter
+                    phones.append(self.db[key])
+            return phones
+        except Exception as e:
+            raise Exception(f"Error displaying phones: {str(e)}")
 
-
-# Update phone details
-def update_phone(shelf):
-    try:
-        id = input("Enter the phone id to update: ")
-        if id in shelf:
-            phone = shelf[id]
-            new_make = input("Enter new make (Leave empty to remain unchanged): ")
-            new_model = input("Enter new model (Leave empty to remain unchanged): ")
-            new_price = input("Enter new price (Leave empty to remain unchanged): ")
-
-            if new_make:
-                phone.set_make(new_make)
-            if new_model:
-                phone.set_model(new_model)
-            if new_price:
-                phone.set_price(new_price)
-
-            shelf[id] = phone
-            print("Phone updated successfully.")
-        else:
-            print("Phone not found.")
-    except Exception as e:
-        print(f"Error updating phone: {e}")
-
-
-# Delete a phone
-def delete_phone(shelf):
-    try:
-        id = input("Enter the phone id to delete: ")
-        if id in shelf:
-            del shelf[id]
-            print("Phone deleted successfully.")
-        else:
-            print("Phone not found.")
-    except Exception as e:
-        print(f"Error deleting phone: {e}")
-
-
-# Display all phones
-def display_all_phones(shelf):
-    try:
-        if len(shelf) == 0:
-            print("No phones in inventory.")
-        else:
-            for phone in shelf.values():
-                print(phone)
-    except Exception as e:
-        print(f"Error displaying phones: {e}")
-
-
-# Display menu
 def display_menu():
-    print("\nSelect the program (1-6) to run:")
+    print("\nPhone Inventory System")
     print("1. Search for a phone")
     print("2. Add a new phone")
-    print("3. Update phone details")
+    print("3. Update a phone")
     print("4. Delete a phone")
     print("5. Display all phones")
-    print("6. Quit the program")
+    print("6. Quit")
+    return input("Enter your choice (1-6): ")
 
-
-# Main program
 def main():
-    with shelve.open("phone_inventory") as shelf:
+    with PhoneShelve() as shelve:
         while True:
-            display_menu()
-            choice = input("Enter your command (1-6): ")
+            choice = display_menu()
+            
+            try:
+                if choice == '1':
+                    search_term = input("Enter search term: ")
+                    results = shelve.search(search_term)
+                    if results:
+                        for phone in results:
+                            print(phone)
+                    else:
+                        print("No phones found.")
 
-            if choice == "1":
-                search_phone(shelf)
-            elif choice == "2":
-                add_phone(shelf)
-            elif choice == "3":
-                update_phone(shelf)
-            elif choice == "4":
-                delete_phone(shelf)
-            elif choice == "5":
-                display_all_phones(shelf)
-            elif choice == "6":
-                print("Exiting the program.")
-                break
-            else:
-                print("Invalid option. Please try again.")
+                elif choice == '2':
+                    make = input("Enter make: ")
+                    model = input("Enter model: ")
+                    while True:
+                        try:
+                            price = float(input("Enter price: "))
+                            break
+                        except ValueError:
+                            print("Please enter a valid price.")
+                    phone = Phone(make, model, price)
+                    phone_id = shelve.add(phone)
+                    print(f"Phone added with ID: {phone_id}")
 
+                elif choice == '3':
+                    while True:
+                        try:
+                            phone_id = int(input("Enter phone ID to update: "))
+                            break
+                        except ValueError:
+                            print("Please enter a valid ID.")
+                    make = input("Enter new make: ")
+                    model = input("Enter new model: ")
+                    while True:
+                        try:
+                            price = float(input("Enter new price: "))
+                            break
+                        except ValueError:
+                            print("Please enter a valid price.")
+                    if shelve.update(phone_id, make, model, price):
+                        print("Phone updated successfully.")
+                    else:
+                        print("Phone not found.")
 
-# Run the program with exception handling
+                elif choice == '4':
+                    while True:
+                        try:
+                            phone_id = int(input("Enter phone ID to delete: "))
+                            break
+                        except ValueError:
+                            print("Please enter a valid ID.")
+                    if shelve.delete(phone_id):
+                        print("Phone deleted successfully.")
+                    else:
+                        print("Phone not found.")
+
+                elif choice == '5':
+                    phones = shelve.display_all()
+                    if phones:
+                        for phone in phones:
+                            print(phone)
+                    else:
+                        print("No phones in inventory.")
+
+                elif choice == '6':
+                    print("Thank you for using Phone Inventory System!")
+                    break
+
+                else:
+                    print("Invalid choice. Please try again.")
+
+            except Exception as e:
+                print(f"An error occurred: {str(e)}")
+                print("Please try again.")
+
 if __name__ == "__main__":
-    try:
-        main()
-    except Exception as e:
-        print(f"An unexpected error occurred: {e}")
+    main() 
